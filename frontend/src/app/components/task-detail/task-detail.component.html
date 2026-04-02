@@ -1,0 +1,220 @@
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger" role="alert">
+    <strong>Error:</strong> {{ error() }}
+  </div>
+} @else if (task(); as t) {
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a routerLink="/tasks" class="text-decoration-none">Tasks</a>
+      </li>
+      <li class="breadcrumb-item active text-truncate" style="max-width: 400px;" aria-current="page">
+        {{ t.title }}
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Task Header -->
+  <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+    <div class="flex-grow-1">
+      <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+        <span [class]="taskService.getPriorityBadgeClass(t.priority)">{{ t.priority }}</span>
+        <span [class]="taskService.getStatusBadgeClass(t.status)">{{ t.status.replace('_', ' ') }}</span>
+        @if (t.isRecurring) {
+          <span class="badge bg-info text-dark">
+            ↻ {{ t.recurrence ?? 'Recurring' }}
+          </span>
+        }
+        @if (t.projectTag) {
+          <span class="badge bg-secondary">{{ t.projectTag }}</span>
+        }
+        @if (taskService.isOverdue(t)) {
+          <span class="badge bg-danger">OVERDUE</span>
+        }
+      </div>
+      <h1 class="h3 fw-bold mb-0">{{ t.title }}</h1>
+    </div>
+    <div class="d-flex gap-2 flex-shrink-0">
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        (click)="editMode.set(!editMode())"
+      >
+        @if (editMode()) {
+          Cancel Edit
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+          </svg>
+          Edit
+        }
+      </button>
+      @if (authService.isOwner()) {
+        <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteTask()">
+          Delete
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  @if (editMode()) {
+    <div class="card mb-4 border-primary">
+      <div class="card-header bg-primary text-white small fw-semibold">Edit Task</div>
+      <div class="card-body p-0">
+        <app-task-form
+          [task]="t"
+          (saved)="onTaskSaved($event)"
+          (cancelled)="editMode.set(false)"
+        />
+      </div>
+    </div>
+  }
+
+  <!-- Two-Column Layout -->
+  <div class="row g-4">
+    <!-- Left: Task Details -->
+    <div class="col-12 col-lg-7">
+      <div class="card">
+        <div class="card-header bg-white fw-semibold">Task Details</div>
+        <div class="card-body">
+          <!-- Description -->
+          <div class="mb-4">
+            <h6 class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.7rem; letter-spacing: 0.05em;">Description</h6>
+            @if (t.description) {
+              <p class="mb-0" style="white-space: pre-wrap;">{{ t.description }}</p>
+            } @else {
+              <p class="text-muted mb-0 fst-italic">No description provided.</p>
+            }
+          </div>
+
+          <div class="row g-3">
+            <!-- Assignee -->
+            <div class="col-sm-6">
+              <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">Assigned To</h6>
+              <div class="d-flex align-items-center gap-2">
+                <div
+                  class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                  style="width: 32px; height: 32px; font-size: 0.7rem; font-weight: 700;"
+                >
+                  {{ authService.getInitials(t.assigneeName) }}
+                </div>
+                <div>
+                  <div class="fw-semibold small">{{ t.assigneeName }}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ t.assigneeEmail }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assigned By -->
+            <div class="col-sm-6">
+              <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">Assigned By</h6>
+              <div class="fw-semibold small">{{ t.assignedByName }}</div>
+              <div class="text-muted" style="font-size: 0.75rem;">{{ t.assignedByEmail }}</div>
+            </div>
+
+            <!-- Due Date -->
+            <div class="col-sm-6">
+              <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">Due Date</h6>
+              @if (t.dueDate) {
+                <span
+                  class="fw-semibold small"
+                  [class.text-danger]="taskService.isOverdue(t)"
+                >
+                  {{ t.dueDate | date:'mediumDate' }}
+                </span>
+              } @else {
+                <span class="text-muted small">Not set</span>
+              }
+            </div>
+
+            <!-- Source -->
+            <div class="col-sm-6">
+              <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">Source</h6>
+              @if (t.sourceUrl) {
+                <a [href]="t.sourceUrl" target="_blank" rel="noopener noreferrer" class="small">
+                  {{ t.source || t.sourceUrl }}
+                </a>
+              } @else if (t.source) {
+                <span class="small">{{ t.source }}</span>
+              } @else {
+                <span class="text-muted small">—</span>
+              }
+            </div>
+
+            <!-- Project Tag -->
+            @if (t.projectTag) {
+              <div class="col-sm-6">
+                <h6 class="text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.7rem; letter-spacing: 0.05em;">Project Tag</h6>
+                <span class="badge bg-secondary">{{ t.projectTag }}</span>
+              </div>
+            }
+
+            <!-- Timestamps -->
+            <div class="col-12 border-top pt-3 mt-1">
+              <div class="d-flex gap-4 text-muted" style="font-size: 0.75rem;">
+                <span>Created: {{ formatDateTime(t.createdAt) }}</span>
+                <span>Updated: {{ formatDateTime(t.updatedAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Comments -->
+    <div class="col-12 col-lg-5">
+      <div class="card">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between">
+          <span class="fw-semibold">Comments</span>
+          <span class="badge bg-secondary rounded-pill">{{ comments().length }}</span>
+        </div>
+        <div class="card-body p-0">
+          @if (commentsLoading()) {
+            <div class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+            </div>
+          } @else if (comments().length === 0) {
+            <div class="text-center text-muted py-4 small">No comments yet.</div>
+          } @else {
+            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+              @for (comment of comments(); track comment.id) {
+                <div class="list-group-item py-3 px-3">
+                  <div class="d-flex gap-2">
+                    <div
+                      class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width: 30px; height: 30px; font-size: 0.65rem; font-weight: 700;"
+                      [title]="comment.authorName"
+                    >
+                      {{ authService.getInitials(comment.authorName) }}
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                      <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="fw-semibold small">{{ comment.authorName }}</span>
+                        <span class="text-muted" style="font-size: 0.7rem;">{{ formatDateTime(comment.createdAt) }}</span>
+                      </div>
+                      <p class="mb-0 small" style="white-space: pre-wrap; word-break: break-word;">{{ comment.body }}</p>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+          <div class="border-top p-3">
+            <app-comment-input
+              [taskId]="t.id"
+              (commentAdded)="onCommentAdded($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

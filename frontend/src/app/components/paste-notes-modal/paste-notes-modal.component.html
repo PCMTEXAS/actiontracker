@@ -1,0 +1,189 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    @if (step() === 'paste') {
+      Paste Meeting Notes
+    } @else {
+      Review Extracted Action Items
+    }
+  </h5>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()"></button>
+</div>
+
+<div class="modal-body">
+  @if (error()) {
+    <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+      {{ error() }}
+      <button type="button" class="btn-close" (click)="error.set(null)"></button>
+    </div>
+  }
+
+  @if (step() === 'paste') {
+    <div>
+      <p class="text-muted small mb-3">
+        Paste your meeting notes, email thread, or Slack messages below. The AI will automatically extract action items,
+        assignees, due dates, and priorities.
+      </p>
+      <div class="mb-3">
+        <label for="notesArea" class="form-label fw-semibold">Notes</label>
+        <textarea
+          id="notesArea"
+          class="form-control font-monospace"
+          rows="14"
+          placeholder="Paste your notes here...&#10;&#10;Example:&#10;John will update the budget spreadsheet by Friday.&#10;Sarah needs to send the client proposal by EOD Monday.&#10;Team to review Q2 metrics - high priority, due next Tuesday."
+          [value]="notes()"
+          (input)="notes.set($any($event.target).value)"
+        ></textarea>
+      </div>
+      <div class="d-flex align-items-center gap-2 text-muted small">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+        </svg>
+        The AI will identify action items, owners, deadlines, and urgency from your text.
+      </div>
+    </div>
+  } @else {
+    <div>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <p class="text-muted small mb-0">
+          Found <strong>{{ extractedTasks().length }}</strong> action item(s). Review and edit before saving.
+        </p>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="addRow()">
+          + Add Row
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="min-width: 200px;">Title</th>
+              <th style="min-width: 150px;">Assignee</th>
+              <th style="min-width: 130px;">Due Date</th>
+              <th style="min-width: 110px;">Priority</th>
+              <th style="min-width: 130px;">Source</th>
+              <th style="width: 40px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (task of extractedTasks(); track $index; let i = $index) {
+              <tr>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    [value]="task.title"
+                    (input)="updateExtractedTask(i, 'title', $any($event.target).value)"
+                    placeholder="Action item title"
+                  />
+                </td>
+                <td>
+                  @if (teamMembers().length > 0) {
+                    <select
+                      class="form-select form-select-sm"
+                      [value]="task.assigneeEmail ?? ''"
+                      (change)="updateExtractedTask(i, 'assigneeEmail', $any($event.target).value)"
+                    >
+                      <option value="">{{ task.assignee || '-- Unassigned --' }}</option>
+                      @for (member of teamMembers(); track member.id) {
+                        <option [value]="member.email">{{ member.name }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      [value]="task.assignee"
+                      (input)="updateExtractedTask(i, 'assignee', $any($event.target).value)"
+                      placeholder="Assignee"
+                    />
+                  }
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    class="form-control form-control-sm"
+                    [value]="task.dueDate ?? ''"
+                    (input)="updateExtractedTask(i, 'dueDate', $any($event.target).value || null)"
+                  />
+                </td>
+                <td>
+                  <select
+                    class="form-select form-select-sm"
+                    [value]="task.priority"
+                    (change)="updateExtractedTask(i, 'priority', $any($event.target).value)"
+                  >
+                    @for (p of priorities; track p) {
+                      <option [value]="p">{{ p }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    [value]="task.source"
+                    (input)="updateExtractedTask(i, 'source', $any($event.target).value)"
+                    placeholder="Source"
+                  />
+                </td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="removeRow(i)"
+                    title="Remove"
+                  >
+                    &times;
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (extractedTasks().length === 0) {
+              <tr>
+                <td colspan="6" class="text-center text-muted py-3">
+                  No action items extracted. <button type="button" class="btn btn-link btn-sm p-0" (click)="addRow()">Add one manually</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="modal-footer">
+  @if (step() === 'paste') {
+    <button type="button" class="btn btn-outline-secondary" (click)="activeModal.dismiss()">Cancel</button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!notes().trim() || extracting()"
+      (click)="extractTasks()"
+    >
+      @if (extracting()) {
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Extracting…
+      } @else {
+        Extract Action Items
+      }
+    </button>
+  } @else {
+    <button type="button" class="btn btn-outline-secondary" (click)="step.set('paste')">Back</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="activeModal.dismiss()">Cancel</button>
+    <button
+      type="button"
+      class="btn btn-success"
+      [disabled]="extractedTasks().length === 0 || saving()"
+      (click)="confirmSave()"
+    >
+      @if (saving()) {
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        Saving…
+      } @else {
+        Save {{ extractedTasks().length }} Task(s)
+      }
+    </button>
+  }
+</div>

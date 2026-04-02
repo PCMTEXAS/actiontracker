@@ -1,0 +1,19 @@
+@use 'variables' as *;
+@use 'bootstrap/scss/bootstrap';
+
+// Global app styles
+body {
+  background-color: $body-bg;
+}
+
+.table-overdue {
+  --bs-table-bg: #{$danger-bg-subtle};
+}
+
+.card-overdue {
+  border-color: var(--bs-danger) !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}

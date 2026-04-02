@@ -1,0 +1,67 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/actiontracker}
+    username: ${DB_USERNAME:actiontracker}
+    password: ${DB_PASSWORD:actiontracker}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: always
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:change-me}
+            client-secret: ${GOOGLE_CLIENT_SECRET:change-me}
+            scope:
+              - email
+              - profile
+              - openid
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: email
+
+app:
+  domain-restriction: digitalchalk.com
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  owner-email: ${OWNER_EMAIL:owner@digitalchalk.com}
+  claude:
+    api-key: ${CLAUDE_API_KEY:change-me}
+    model: claude-sonnet-4-20250514
+    base-url: https://api.anthropic.com/v1
+  gmail:
+    from: ${GMAIL_FROM:noreply@digitalchalk.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.pcmtexas.actiontracker: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

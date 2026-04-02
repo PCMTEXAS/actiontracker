@@ -1,0 +1,327 @@
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <h2 class="h4 fw-bold mb-0">Tasks</h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="exportCsv()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+      </svg>
+      Export CSV
+    </button>
+    <div class="btn-group btn-group-sm" role="group">
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="viewMode() === 'list'"
+        [class.btn-outline-secondary]="viewMode() !== 'list'"
+        (click)="viewMode.set('list')"
+        title="List view"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="btn"
+        [class.btn-primary]="viewMode() === 'kanban'"
+        [class.btn-outline-secondary]="viewMode() !== 'kanban'"
+        (click)="viewMode.set('kanban')"
+        title="Kanban view"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2 12h12v1H2zm0-4h12v1H2zm0-4h12v1H2z"/>
+        </svg>
+      </button>
+    </div>
+    <button type="button" class="btn btn-outline-primary btn-sm" (click)="openPasteModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5H3.5a.5.5 0 0 0 0 1H5v.5A1.5 1.5 0 0 0 6.5 4.5h3A1.5 1.5 0 0 0 11 3V2h1.5a.5.5 0 0 0 0-1H11A1.5 1.5 0 0 0 9.5 0h-3z"/>
+      </svg>
+      Paste Notes
+    </button>
+    <button type="button" class="btn btn-primary btn-sm" (click)="openCreateModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+        <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
+      </svg>
+      New Task
+    </button>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-end">
+      <div class="col-sm-6 col-md-3 col-lg-2">
+        <label class="form-label form-label-sm mb-1">Assignee</label>
+        <select
+          class="form-select form-select-sm"
+          [value]="filterAssigneeEmail()"
+          (change)="filterAssigneeEmail.set($any($event.target).value)"
+        >
+          <option value="">All assignees</option>
+          @for (m of teamMembers(); track m.id) {
+            <option [value]="m.email">{{ m.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">Status</label>
+        <select
+          class="form-select form-select-sm"
+          [value]="filterStatus()"
+          (change)="filterStatus.set($any($event.target).value)"
+        >
+          <option value="">All statuses</option>
+          @for (s of statuses; track s) {
+            <option [value]="s">{{ s.replace('_', ' ') }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">Priority</label>
+        <select
+          class="form-select form-select-sm"
+          [value]="filterPriority()"
+          (change)="filterPriority.set($any($event.target).value)"
+        >
+          <option value="">All priorities</option>
+          <option value="HIGH">HIGH</option>
+          <option value="MEDIUM">MEDIUM</option>
+          <option value="LOW">LOW</option>
+        </select>
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">Due From</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [value]="filterDueDateFrom()"
+          (change)="filterDueDateFrom.set($any($event.target).value)"
+        />
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">Due To</label>
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [value]="filterDueDateTo()"
+          (change)="filterDueDateTo.set($any($event.target).value)"
+        />
+      </div>
+      <div class="col-sm-6 col-md-2">
+        <label class="form-label form-label-sm mb-1">Project Tag</label>
+        <input
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Tag…"
+          [value]="filterProjectTag()"
+          (input)="filterProjectTag.set($any($event.target).value)"
+        />
+      </div>
+      <div class="col-sm-6 col-md-2 d-flex align-items-center pt-3">
+        <div class="form-check form-check-sm">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="recurringFilter"
+            [checked]="filterRecurringOnly()"
+            (change)="filterRecurringOnly.set($any($event.target).checked)"
+          />
+          <label class="form-check-label small" for="recurringFilter">Recurring only</label>
+        </div>
+      </div>
+      <div class="col-sm-12 col-md-auto d-flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Toolbar -->
+@if (selectedIds().size > 0) {
+  <div class="alert alert-secondary d-flex align-items-center gap-3 py-2 mb-3" role="alert">
+    <span class="fw-semibold small">{{ selectedIds().size }} selected</span>
+    <div class="d-flex gap-2 flex-wrap">
+      <div class="dropdown">
+        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+          Change Status
+        </button>
+        <ul class="dropdown-menu">
+          @for (s of statuses; track s) {
+            <li>
+              <button type="button" class="dropdown-item" (click)="bulkStatusChange(s)">
+                {{ s.replace('_', ' ') }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="bulkDelete()">
+        Delete Selected
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearSelection()">
+        Clear Selection
+      </button>
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <div class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading…</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger" role="alert">
+    <strong>Error:</strong> {{ error() }}
+    <button type="button" class="btn btn-sm btn-outline-danger ms-3" (click)="loadTasks()">Retry</button>
+  </div>
+} @else if (viewMode() === 'kanban') {
+  <app-task-kanban
+    [tasks]="tasks()"
+    (taskMoved)="loadTasks()"
+  />
+} @else {
+  @if (tasks().length === 0) {
+    <div class="text-center py-5 text-muted">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="mb-3 d-block mx-auto" viewBox="0 0 16 16">
+        <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+      </svg>
+      <p class="mb-2">No tasks found</p>
+      <button type="button" class="btn btn-primary" (click)="openCreateModal()">Create your first task</button>
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 36px;">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [checked]="allSelected()"
+                (change)="toggleSelectAll()"
+              />
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('title')">
+              Task {{ sortIcon('title') }}
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('assignee')">
+              Assignee {{ sortIcon('assignee') }}
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('dueDate')">
+              Due Date {{ sortIcon('dueDate') }}
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('priority')">
+              Priority {{ sortIcon('priority') }}
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('status')">
+              Status {{ sortIcon('status') }}
+            </th>
+            <th>Source</th>
+            <th style="width: 90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (task of pagedTasks(); track task.id) {
+            <tr [class.table-danger]="taskService.isOverdue(task)">
+              <td>
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  [checked]="isSelected(task.id)"
+                  (change)="toggleSelect(task.id)"
+                />
+              </td>
+              <td>
+                <a [routerLink]="['/tasks', task.id]" class="text-decoration-none fw-medium">
+                  {{ task.title }}
+                </a>
+                @if (task.isRecurring) {
+                  <span class="badge bg-light text-secondary border ms-1 small" title="Recurring">↻</span>
+                }
+                @if (task.projectTag) {
+                  <span class="badge bg-light text-primary border ms-1 small">{{ task.projectTag }}</span>
+                }
+              </td>
+              <td class="small">{{ task.assigneeName }}</td>
+              <td>
+                @if (task.dueDate) {
+                  <span
+                    [class.text-danger]="taskService.isOverdue(task)"
+                    [class.fw-semibold]="taskService.isOverdue(task)"
+                    class="small"
+                  >
+                    {{ task.dueDate }}
+                  </span>
+                } @else {
+                  <span class="text-muted small">—</span>
+                }
+              </td>
+              <td>
+                <span [class]="taskService.getPriorityBadgeClass(task.priority)">
+                  {{ task.priority }}
+                </span>
+              </td>
+              <td>
+                <select
+                  class="form-select form-select-sm"
+                  style="min-width: 130px;"
+                  [value]="task.status"
+                  (change)="onStatusChange(task.id, $any($event.target).value)"
+                >
+                  @for (s of statuses; track s) {
+                    <option [value]="s">{{ s.replace('_', ' ') }}</option>
+                  }
+                </select>
+              </td>
+              <td class="text-muted small text-truncate" style="max-width: 120px;" [title]="task.source">
+                {{ task.source || '—' }}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a [routerLink]="['/tasks', task.id]" class="btn btn-sm btn-outline-primary" title="View">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                      <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                    </svg>
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteTask(task.id)" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                      <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (sortedTasks().length > pageSize()) {
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <span class="text-muted small">
+          Showing {{ (page() - 1) * pageSize() + 1 }}–{{ page() * pageSize() > sortedTasks().length ? sortedTasks().length : page() * pageSize() }} of {{ sortedTasks().length }} tasks
+        </span>
+        <ngb-pagination
+          [collectionSize]="sortedTasks().length"
+          [page]="page()"
+          [pageSize]="pageSize()"
+          [maxSize]="7"
+          [rotate]="true"
+          [boundaryLinks]="true"
+          (pageChange)="page.set($event)"
+        />
+      </div>
+    }
+  }
+}

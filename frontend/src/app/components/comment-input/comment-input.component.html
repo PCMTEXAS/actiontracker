@@ -1,0 +1,59 @@
+<div class="position-relative">
+  <!-- Mention dropdown -->
+  @if (mentionSearch() !== null && filteredMembers().length > 0) {
+    <div
+      class="position-absolute bottom-100 start-0 w-100 mb-1 border rounded shadow-sm bg-white"
+      style="z-index: 1050; max-height: 200px; overflow-y: auto;"
+    >
+      @for (member of filteredMembers(); track member.id) {
+        <button
+          type="button"
+          class="btn btn-light w-100 text-start rounded-0 border-bottom d-flex align-items-center gap-2 py-2 px-3"
+          style="font-size: 0.875rem;"
+          (click)="selectMention(member)"
+        >
+          <div
+            class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+            style="width: 28px; height: 28px; font-size: 0.65rem; font-weight: 700;"
+          >
+            {{ member.name.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <div class="fw-semibold">{{ member.name }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">{{ member.email }}</div>
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="input-group">
+    <textarea
+      class="form-control"
+      rows="2"
+      placeholder="Add a comment… (type @ to mention someone, Ctrl+Enter to submit)"
+      [value]="body()"
+      (input)="onBodyInput($event)"
+      (keydown)="onKeyDown($event)"
+      style="resize: none;"
+    ></textarea>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!body().trim() || submitting()"
+      (click)="submit()"
+      title="Submit comment (Ctrl+Enter)"
+    >
+      @if (submitting()) {
+        <span class="spinner-border spinner-border-sm" role="status"></span>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+        </svg>
+      }
+    </button>
+  </div>
+  <div class="text-muted mt-1" style="font-size: 0.7rem;">
+    Press Ctrl+Enter to submit. Type @ to mention a team member.
+  </div>
+</div>
