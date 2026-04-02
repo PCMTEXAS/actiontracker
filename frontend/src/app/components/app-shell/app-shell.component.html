@@ -73,11 +73,9 @@
             <div class="d-none d-lg-block">
               <span class="text-white small fw-semibold">{{ user.name }}</span>
               <span
-                class="badge ms-1"
+                class="badge ms-1 text-dark"
                 [class.bg-warning]="authService.isOwner()"
-                [class.text-dark]="authService.isOwner()"
                 [class.bg-light]="!authService.isOwner()"
-                [class.text-dark]="!authService.isOwner()"
               >
                 {{ user.role }}
               </span>
