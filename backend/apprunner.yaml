@@ -1,0 +1,48 @@
+# AWS App Runner service definition
+# Used with: aws apprunner create-service --cli-input-yaml file://apprunner.yaml
+#
+# Prerequisites:
+#   1. ECR repository created: aws ecr create-repository --repository-name actiontracker-backend
+#   2. RDS PostgreSQL 15 instance running and accessible from App Runner VPC connector
+#   3. Secret created in Secrets Manager (see .env.example for keys)
+#   4. App Runner ECR access role created with AmazonEC2ContainerRegistryReadOnly policy
+#   5. App Runner instance role created with secretsmanager:GetSecretValue permission
+
+ServiceName: actiontracker-backend
+
+SourceConfiguration:
+  AuthenticationConfiguration:
+    # ARN of IAM role that grants App Runner access to ECR
+    AccessRoleArn: arn:aws:iam::ACCOUNT_ID:role/AppRunnerECRAccessRole
+  ImageRepository:
+    ImageIdentifier: ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/actiontracker-backend:latest
+    ImageRepositoryType: ECR
+    ImageConfiguration:
+      Port: "8080"
+      RuntimeEnvironmentVariables:
+        SPRING_PROFILES_ACTIVE: prod
+        AWS_REGION: us-east-1
+        # All other secrets are loaded from AWS Secrets Manager at startup
+        # Set AWS_SECRETS_ARN to your secret's ARN:
+        AWS_SECRETS_ARN: arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:actiontracker/prod-XXXXXX
+  AutoDeploymentsEnabled: "false"
+
+InstanceConfiguration:
+  Cpu: "1024"    # 1 vCPU
+  Memory: "2048" # 2 GB
+
+HealthCheckConfiguration:
+  Protocol: HTTP
+  Path: /actuator/health
+  Interval: 10
+  Timeout: 5
+  HealthyThreshold: 1
+  UnhealthyThreshold: 3
+
+AutoScalingConfigurationArn: ""  # Leave empty to use default (1-25 instances)
+
+Tags:
+  - Key: Project
+    Value: actiontracker
+  - Key: Environment
+    Value: production

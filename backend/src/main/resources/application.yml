@@ -65,3 +65,15 @@ logging:
     com.pcmtexas.actiontracker: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+
+---
+# AWS production profile — activated when SPRING_PROFILES_ACTIVE=prod
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  secrets:
+    arn: ${AWS_SECRETS_ARN:}
