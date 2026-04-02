@@ -71,13 +71,13 @@ public class TaskCommentController {
         String authorName = principal.getFullName() != null ? principal.getFullName() : authorEmail;
 
         // Extract @mention handles from the comment body
-        List<String> mentionedEmails = extractMentions(request.getBody(), authorEmail);
+        List<String> mentionedEmails = extractMentions(request.body(), authorEmail);
 
         TaskComment comment = TaskComment.builder()
                 .task(task)
                 .authorEmail(authorEmail)
                 .authorName(authorName)
-                .body(request.getBody())
+                .body(request.body())
                 .mentions(mentionedEmails)
                 .build();
 
