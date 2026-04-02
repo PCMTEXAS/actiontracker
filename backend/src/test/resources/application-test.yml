@@ -28,7 +28,7 @@ app:
   frontend-url: http://localhost:4200
   claude:
     api-key: test-api-key
-    model: claude-sonnet-4-20250514
+    model: claude-sonnet-4-6
     base-url: https://api.anthropic.com/v1
   gmail:
     from: test@digitalchalk.com

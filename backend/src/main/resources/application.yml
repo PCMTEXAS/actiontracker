@@ -46,7 +46,7 @@ app:
   owner-email: ${OWNER_EMAIL:owner@digitalchalk.com}
   claude:
     api-key: ${CLAUDE_API_KEY:change-me}
-    model: claude-sonnet-4-20250514
+    model: ${CLAUDE_MODEL:claude-sonnet-4-6}
     base-url: https://api.anthropic.com/v1
   gmail:
     from: ${GMAIL_FROM:noreply@digitalchalk.com}
