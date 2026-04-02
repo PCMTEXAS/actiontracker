@@ -7,6 +7,7 @@ import com.pcmtexas.actiontracker.enums.Priority;
 import com.pcmtexas.actiontracker.enums.Status;
 import com.pcmtexas.actiontracker.enums.UserRole;
 import com.pcmtexas.actiontracker.repository.AppUserRepository;
+import com.pcmtexas.actiontracker.repository.TaskActivityRepository;
 import com.pcmtexas.actiontracker.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class TaskController {
 
     private final TaskService taskService;
     private final AppUserRepository appUserRepository;
+    private final TaskActivityRepository taskActivityRepository;
 
     @GetMapping
     public ResponseEntity<List<TaskDTO>> getTasks(
@@ -199,6 +201,16 @@ public class TaskController {
         headers.setContentLength(csvBytes.length);
 
         return ResponseEntity.ok().headers(headers).body(csvBytes);
+    }
+
+    @GetMapping("/{id}/activity")
+    public ResponseEntity<List<ActivityDTO>> getTaskActivity(@PathVariable UUID id,
+                                                              @AuthenticationPrincipal OidcUser principal) {
+        List<ActivityDTO> activity = taskActivityRepository.findByTaskIdOrderByCreatedAtDesc(id)
+                .stream()
+                .map(ActivityDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(activity);
     }
 
     @GetMapping("/dashboard")

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Comment, CommentCreateRequest } from '../models/comment.model';
+import { ActivityItem } from '../models/dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class CommentService {
@@ -14,5 +15,13 @@ export class CommentService {
   addComment(taskId: string, body: string): Observable<Comment> {
     const req: CommentCreateRequest = { body };
     return this.http.post<Comment>(`/api/tasks/${taskId}/comments`, req);
+  }
+
+  deleteComment(taskId: string, commentId: string): Observable<void> {
+    return this.http.delete<void>(`/api/tasks/${taskId}/comments/${commentId}`);
+  }
+
+  getTaskActivity(taskId: string): Observable<ActivityItem[]> {
+    return this.http.get<ActivityItem[]>(`/api/tasks/${taskId}/activity`);
   }
 }

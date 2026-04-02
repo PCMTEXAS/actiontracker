@@ -6,6 +6,7 @@ import { CommentService } from '../../services/comment.service';
 import { AuthService } from '../../services/auth.service';
 import { Task } from '../../models/task.model';
 import { Comment } from '../../models/comment.model';
+import { ActivityItem } from '../../models/dashboard.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
 import { CommentInputComponent } from '../comment-input/comment-input.component';
 
@@ -20,12 +21,18 @@ export class TaskDetailComponent implements OnInit {
   protected readonly taskService = inject(TaskService);
   private readonly commentService = inject(CommentService);
   protected readonly authService = inject(AuthService);
+
   protected readonly task = signal<Task | null>(null);
   protected readonly comments = signal<Comment[]>([]);
+  protected readonly activity = signal<ActivityItem[]>([]);
   protected readonly loading = signal<boolean>(true);
   protected readonly error = signal<string | null>(null);
   protected readonly editMode = signal<boolean>(false);
   protected readonly commentsLoading = signal<boolean>(false);
+  protected readonly activityLoading = signal<boolean>(false);
+  protected readonly activeTab = signal<'comments' | 'activity'>('comments');
+
+  private taskId = '';
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -34,8 +41,10 @@ export class TaskDetailComponent implements OnInit {
       this.loading.set(false);
       return;
     }
+    this.taskId = id;
     this.loadTask(id);
     this.loadComments(id);
+    this.loadActivity(id);
   }
 
   private loadTask(id: string): void {
@@ -63,13 +72,36 @@ export class TaskDetailComponent implements OnInit {
     });
   }
 
+  private loadActivity(id: string): void {
+    this.activityLoading.set(true);
+    this.commentService.getTaskActivity(id).subscribe({
+      next: (items) => {
+        this.activity.set(items);
+        this.activityLoading.set(false);
+      },
+      error: () => this.activityLoading.set(false),
+    });
+  }
+
   protected onTaskSaved(updated: Task): void {
     this.task.set(updated);
     this.editMode.set(false);
+    this.loadActivity(this.taskId);
   }
 
   protected onCommentAdded(comment: Comment): void {
     this.comments.update((c) => [...c, comment]);
+    this.loadActivity(this.taskId);
+  }
+
+  protected deleteComment(commentId: string): void {
+    if (!confirm('Delete this comment?')) return;
+    this.commentService.deleteComment(this.taskId, commentId).subscribe({
+      next: () => {
+        this.comments.update((c) => c.filter((cm) => cm.id !== commentId));
+        this.loadActivity(this.taskId);
+      },
+    });
   }
 
   protected deleteTask(): void {
@@ -81,6 +113,17 @@ export class TaskDetailComponent implements OnInit {
         window.history.back();
       },
     });
+  }
+
+  protected activityIcon(eventType: string): string {
+    switch (eventType) {
+      case 'TASK_CREATED':    return '✚';
+      case 'STATUS_CHANGED':  return '↔';
+      case 'REASSIGNED':      return '👤';
+      case 'DUE_DATE_CHANGED': return '📅';
+      case 'COMMENT_ADDED':   return '💬';
+      default:                return '•';
+    }
   }
 
   protected formatDateTime(dateStr: string): string {

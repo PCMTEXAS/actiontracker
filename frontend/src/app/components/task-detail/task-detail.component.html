@@ -170,50 +170,142 @@
       </div>
     </div>
 
-    <!-- Right: Comments -->
+    <!-- Right: Comments + Activity tabs -->
     <div class="col-12 col-lg-5">
       <div class="card">
-        <div class="card-header bg-white d-flex align-items-center justify-content-between">
-          <span class="fw-semibold">Comments</span>
-          <span class="badge bg-secondary rounded-pill">{{ comments().length }}</span>
+        <!-- Tab header -->
+        <div class="card-header bg-white p-0">
+          <ul class="nav nav-tabs card-header-tabs ms-0 border-bottom-0">
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link rounded-0"
+                [class.active]="activeTab() === 'comments'"
+                (click)="activeTab.set('comments')"
+              >
+                Comments
+                <span class="badge rounded-pill ms-1"
+                  [class.bg-primary]="activeTab() === 'comments'"
+                  [class.bg-secondary]="activeTab() !== 'comments'"
+                >{{ comments().length }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button
+                type="button"
+                class="nav-link rounded-0"
+                [class.active]="activeTab() === 'activity'"
+                (click)="activeTab.set('activity')"
+              >
+                Activity
+                <span class="badge rounded-pill ms-1"
+                  [class.bg-primary]="activeTab() === 'activity'"
+                  [class.bg-secondary]="activeTab() !== 'activity'"
+                >{{ activity().length }}</span>
+              </button>
+            </li>
+          </ul>
         </div>
+
         <div class="card-body p-0">
-          @if (commentsLoading()) {
-            <div class="text-center py-3">
-              <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
-            </div>
-          } @else if (comments().length === 0) {
-            <div class="text-center text-muted py-4 small">No comments yet.</div>
-          } @else {
-            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
-              @for (comment of comments(); track comment.id) {
-                <div class="list-group-item py-3 px-3">
-                  <div class="d-flex gap-2">
-                    <div
-                      class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0"
-                      style="width: 30px; height: 30px; font-size: 0.65rem; font-weight: 700;"
-                      [title]="comment.authorName"
-                    >
-                      {{ authService.getInitials(comment.authorName) }}
-                    </div>
-                    <div class="flex-grow-1 overflow-hidden">
-                      <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="fw-semibold small">{{ comment.authorName }}</span>
-                        <span class="text-muted" style="font-size: 0.7rem;">{{ formatDateTime(comment.createdAt) }}</span>
+
+          <!-- Comments tab -->
+          @if (activeTab() === 'comments') {
+            @if (commentsLoading()) {
+              <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+              </div>
+            } @else if (comments().length === 0) {
+              <div class="text-center text-muted py-4 small">No comments yet.</div>
+            } @else {
+              <div class="list-group list-group-flush" style="max-height: 380px; overflow-y: auto;">
+                @for (comment of comments(); track comment.id) {
+                  <div class="list-group-item py-3 px-3">
+                    <div class="d-flex gap-2">
+                      <div
+                        class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="width: 30px; height: 30px; font-size: 0.65rem; font-weight: 700;"
+                        [title]="comment.authorName"
+                      >
+                        {{ authService.getInitials(comment.authorName) }}
                       </div>
-                      <p class="mb-0 small" style="white-space: pre-wrap; word-break: break-word;">{{ comment.body }}</p>
+                      <div class="flex-grow-1 overflow-hidden">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold small">{{ comment.authorName }}</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">{{ formatDateTime(comment.createdAt) }}</span>
+                          </div>
+                          @if (authService.isOwner() || authService.currentUser()?.email === comment.authorEmail) {
+                            <button
+                              type="button"
+                              class="btn btn-link btn-sm text-danger p-0 ms-1"
+                              style="font-size: 0.7rem; line-height: 1;"
+                              title="Delete comment"
+                              (click)="deleteComment(comment.id)"
+                            >✕</button>
+                          }
+                        </div>
+                        <p class="mb-0 small" style="white-space: pre-wrap; word-break: break-word;">{{ comment.body }}</p>
+                        @if (comment.mentions.length > 0) {
+                          <div class="mt-1 d-flex flex-wrap gap-1">
+                            @for (mention of comment.mentions; track mention) {
+                              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25" style="font-size: 0.65rem;">
+                                &#64;{{ mention }}
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
-              }
+                }
+              </div>
+            }
+            <div class="border-top p-3">
+              <app-comment-input
+                [taskId]="t.id"
+                (commentAdded)="onCommentAdded($event)"
+              />
             </div>
           }
-          <div class="border-top p-3">
-            <app-comment-input
-              [taskId]="t.id"
-              (commentAdded)="onCommentAdded($event)"
-            />
-          </div>
+
+          <!-- Activity tab -->
+          @if (activeTab() === 'activity') {
+            @if (activityLoading()) {
+              <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+              </div>
+            } @else if (activity().length === 0) {
+              <div class="text-center text-muted py-4 small">No activity yet.</div>
+            } @else {
+              <ul class="list-group list-group-flush" style="max-height: 480px; overflow-y: auto;">
+                @for (item of activity(); track item.id) {
+                  <li class="list-group-item py-2 px-3">
+                    <div class="d-flex gap-2 align-items-start">
+                      <div
+                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                        style="width: 28px; height: 28px; font-size: 0.65rem; font-weight: 600;"
+                      >
+                        {{ item.actorName.charAt(0).toUpperCase() }}
+                      </div>
+                      <div class="overflow-hidden flex-grow-1">
+                        <div class="small">
+                          <span class="me-1">{{ activityIcon(item.eventType) }}</span>
+                          <strong>{{ item.actorName }}</strong>
+                          <span class="text-muted ms-1">{{ item.eventType.toLowerCase().replaceAll('_', ' ') }}</span>
+                        </div>
+                        @if (item.detail) {
+                          <div class="text-muted text-truncate" style="font-size: 0.75rem;">{{ item.detail }}</div>
+                        }
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ formatDateTime(item.createdAt) }}</div>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          }
+
         </div>
       </div>
     </div>
