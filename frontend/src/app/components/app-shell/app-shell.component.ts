@@ -27,4 +27,9 @@ export class AppShellComponent implements OnInit {
   protected toggleMenu(): void {
     this.menuOpen.set(!this.menuOpen());
   }
+
+  protected toggleDigest(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.authService.updatePreferences({ dailyDigestEnabled: checked });
+  }
 }

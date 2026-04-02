@@ -62,36 +62,84 @@
         }
 
         @if (authService.currentUser(); as user) {
-          <div class="d-flex align-items-center gap-2">
-            <div
-              class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center fw-bold"
-              style="width: 34px; height: 34px; font-size: 0.75rem;"
-              title="{{ user.name }}"
-            >
-              {{ authService.getInitials(user.name) }}
-            </div>
-            <div class="d-none d-lg-block">
-              <span class="text-white small fw-semibold">{{ user.name }}</span>
-              <span
-                class="badge ms-1 text-dark"
-                [class.bg-warning]="authService.isOwner()"
-                [class.bg-light]="!authService.isOwner()"
-              >
-                {{ user.role }}
-              </span>
-            </div>
+          <div class="dropdown">
             <button
               type="button"
-              class="btn btn-outline-light btn-sm"
-              (click)="authService.logout()"
-              title="Sign out"
+              class="btn btn-link text-white text-decoration-none d-flex align-items-center gap-2 p-0"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-                <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+              <div
+                class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                style="width: 34px; height: 34px; font-size: 0.75rem;"
+              >
+                {{ authService.getInitials(user.name) }}
+              </div>
+              <div class="d-none d-lg-flex flex-column align-items-start lh-1">
+                <span class="small fw-semibold">{{ user.name }}</span>
+                <span
+                  class="badge mt-1 text-dark"
+                  [class.bg-warning]="authService.isOwner()"
+                  [class.bg-light]="!authService.isOwner()"
+                  style="font-size: 0.6rem;"
+                >
+                  {{ user.role }}
+                </span>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="d-none d-lg-block ms-1 opacity-75" viewBox="0 0 16 16">
+                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
               </svg>
-              <span class="d-none d-lg-inline ms-1">Sign out</span>
             </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 240px;">
+              <!-- User info header -->
+              <li class="px-3 py-2 border-bottom">
+                <div class="fw-semibold small">{{ user.name }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">{{ user.email }}</div>
+              </li>
+
+              <!-- Daily digest toggle -->
+              <li class="px-3 py-2 border-bottom">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <div class="small fw-semibold">Daily Digest Email</div>
+                    <div class="text-muted" style="font-size: 0.7rem;">
+                      @if (user.dailyDigestEnabled) {
+                        Sent each morning at 7:30 AM
+                      } @else {
+                        Currently disabled
+                      }
+                    </div>
+                  </div>
+                  <div class="form-check form-switch mb-0 ms-2">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="digestToggle"
+                      [checked]="user.dailyDigestEnabled"
+                      (change)="toggleDigest($event)"
+                      style="cursor: pointer;"
+                    />
+                  </div>
+                </div>
+              </li>
+
+              <!-- Sign out -->
+              <li>
+                <button
+                  type="button"
+                  class="dropdown-item text-danger d-flex align-items-center gap-2"
+                  (click)="authService.logout()"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                  </svg>
+                  Sign out
+                </button>
+              </li>
+            </ul>
           </div>
         }
       </div>

@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,7 +60,29 @@ public class UserController {
         return ResponseEntity.ok(UserDTO.fromEntity(appUser));
     }
 
-    // ---- DTO ----
+    @PatchMapping("/me/preferences")
+    public ResponseEntity<UserDTO> updatePreferences(
+            @RequestBody PreferencesRequest request,
+            @AuthenticationPrincipal OidcUser principal) {
+
+        String email = principal.getEmail();
+        AppUser user = appUserRepository.findByEmail(email)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found: " + email));
+
+        if (request.dailyDigestEnabled() != null) {
+            user.setDailyDigestEnabled(request.dailyDigestEnabled());
+        }
+
+        AppUser saved = appUserRepository.save(user);
+        log.info("Updated preferences for {} — dailyDigestEnabled={}", email, saved.isDailyDigestEnabled());
+        return ResponseEntity.ok(UserDTO.fromEntity(saved));
+    }
+
+    // ---- DTOs ----
+
+    record PreferencesRequest(Boolean dailyDigestEnabled) {}
+
+    // ---- UserDTO ----
 
     @Data
     @Builder

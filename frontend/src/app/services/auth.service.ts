@@ -39,6 +39,13 @@ export class AuthService {
     window.location.href = '/oauth2/authorization/google';
   }
 
+  updatePreferences(prefs: { dailyDigestEnabled: boolean }): void {
+    this.http.patch<AppUser>('/api/users/me/preferences', prefs).subscribe({
+      next: (updated) => this.currentUser.set(updated),
+      error: (err) => console.error('Failed to update preferences', err),
+    });
+  }
+
   getInitials(name: string): string {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 0 || parts[0] === '') return '?';

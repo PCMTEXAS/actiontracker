@@ -17,6 +17,21 @@ spring:
         format_sql: false
         jdbc:
           time_zone: UTC
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   sql:
     init:
       mode: always
@@ -50,6 +65,8 @@ app:
     base-url: https://api.anthropic.com/v1
   gmail:
     from: ${GMAIL_FROM:noreply@digitalchalk.com}
+  email:
+    enabled: ${EMAIL_ENABLED:false}
 
 management:
   endpoints:

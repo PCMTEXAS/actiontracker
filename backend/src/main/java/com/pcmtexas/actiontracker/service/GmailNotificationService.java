@@ -2,8 +2,14 @@ package com.pcmtexas.actiontracker.service;
 
 import com.pcmtexas.actiontracker.entity.Task;
 import com.pcmtexas.actiontracker.entity.TaskComment;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -13,22 +19,29 @@ import java.util.List;
 @Slf4j
 public class GmailNotificationService {
 
+    private final JavaMailSender mailSender;
+
     @Value("${app.gmail.from}")
     private String fromAddress;
 
     @Value("${app.frontend-url:http://localhost:4200}")
     private String frontendUrl;
 
+    @Value("${app.email.enabled:false}")
+    private boolean emailEnabled;
+
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMMM d, yyyy");
+
+    public GmailNotificationService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     public void sendTaskAssignedEmail(Task task, String assignedByName) {
         String subject = "[Action Tracker] New task assigned to you: " + task.getTitle();
         String body = buildEmailBody(task,
                 "You have been assigned a new task by " + assignedByName,
                 assignedByName);
-
-        log.info("[EMAIL NOTIFICATION] sendTaskAssignedEmail | to={} | subject={} | body_snippet={}",
-                task.getAssigneeEmail(), subject, truncate(body, 200));
+        sendEmail(task.getAssigneeEmail(), subject, body);
     }
 
     public void sendTaskDueTomorrowEmail(Task task) {
@@ -36,9 +49,7 @@ public class GmailNotificationService {
         String body = buildEmailBody(task,
                 "This task is due tomorrow",
                 "Action Tracker System");
-
-        log.info("[EMAIL NOTIFICATION] sendTaskDueTomorrowEmail | to={} | subject={} | body_snippet={}",
-                task.getAssigneeEmail(), subject, truncate(body, 200));
+        sendEmail(task.getAssigneeEmail(), subject, body);
     }
 
     public void sendOverdueEmail(Task task, String ownerEmail) {
@@ -46,9 +57,7 @@ public class GmailNotificationService {
         String body = buildEmailBody(task,
                 "This task is overdue and has not been completed",
                 "Action Tracker System");
-
-        log.info("[EMAIL NOTIFICATION] sendOverdueEmail | to={} | subject={} | body_snippet={}",
-                ownerEmail, subject, truncate(body, 200));
+        sendEmail(ownerEmail, subject, body);
     }
 
     public void sendMentionNotification(TaskComment comment, String mentionedEmail,
@@ -73,9 +82,7 @@ public class GmailNotificationService {
                 comment.getBody(),
                 frontendUrl,
                 task.getId());
-
-        log.info("[EMAIL NOTIFICATION] sendMentionNotification | to={} | subject={} | body_snippet={}",
-                mentionedEmail, subject, truncate(body, 200));
+        sendEmail(mentionedEmail, subject, body);
     }
 
     public void sendTaskCompletedEmail(Task task) {
@@ -83,10 +90,8 @@ public class GmailNotificationService {
         String body = buildEmailBody(task,
                 "This task has been marked as complete",
                 task.getAssigneeName());
-
         // Notify the person who assigned the task
-        log.info("[EMAIL NOTIFICATION] sendTaskCompletedEmail | to={} | subject={} | body_snippet={}",
-                task.getAssignedByEmail(), subject, truncate(body, 200));
+        sendEmail(task.getAssignedByEmail(), subject, body);
     }
 
     public void sendDailyDigestEmail(String recipientEmail,
@@ -99,10 +104,14 @@ public class GmailNotificationService {
         body.append("Here is your daily action tracker digest:\n\n");
 
         body.append("=== YOUR OPEN TASKS (").append(myTasks.size()).append(") ===\n");
-        for (Task task : myTasks) {
-            String dueDateStr = task.getDueDate() != null ? task.getDueDate().format(DATE_FMT) : "No due date";
-            body.append(String.format("  [%s] %s - Due: %s - Priority: %s\n",
-                    task.getStatus(), task.getTitle(), dueDateStr, task.getPriority()));
+        if (myTasks.isEmpty()) {
+            body.append("  No open tasks — great work!\n");
+        } else {
+            for (Task task : myTasks) {
+                String dueDateStr = task.getDueDate() != null ? task.getDueDate().format(DATE_FMT) : "No due date";
+                body.append(String.format("  [%s] %s - Due: %s - Priority: %s\n",
+                        task.getStatus(), task.getTitle(), dueDateStr, task.getPriority()));
+            }
         }
 
         if (!delegatedOverdueTasks.isEmpty()) {
@@ -114,11 +123,36 @@ public class GmailNotificationService {
             }
         }
 
-        body.append("\nView all tasks: ").append(frontendUrl).append("\n");
+        body.append("\nView all tasks: ").append(frontendUrl).append("/tasks\n");
+        body.append("\nTo opt out of daily digest emails, visit: ").append(frontendUrl).append("/settings\n");
         body.append("\n--- PCM Texas Action Tracker ---\n");
 
-        log.info("[EMAIL NOTIFICATION] sendDailyDigestEmail | to={} | subject={} | myTasks={} | overdueAssigned={}",
-                recipientEmail, subject, myTasks.size(), delegatedOverdueTasks.size());
+        sendEmail(recipientEmail, subject, body.toString());
+    }
+
+    // ---- Private helpers ----
+
+    @Async
+    protected void sendEmail(String to, String subject, String textBody) {
+        log.info("[EMAIL] to={} | subject={}", to, subject);
+
+        if (!emailEnabled) {
+            log.info("[EMAIL DISABLED] Would have sent to={} subject={}", to, subject);
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+            helper.setFrom(fromAddress);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(textBody, false);
+            mailSender.send(message);
+            log.info("[EMAIL SENT] to={} | subject={}", to, subject);
+        } catch (MessagingException | MailException e) {
+            log.error("[EMAIL FAILED] to={} | subject={} | error={}", to, subject, e.getMessage());
+        }
     }
 
     private String buildEmailBody(Task task, String eventDescription, String triggeredBy) {
@@ -152,10 +186,5 @@ public class GmailNotificationService {
                 task.getDescription() != null ? "Description: " + task.getDescription() : "",
                 frontendUrl,
                 task.getId());
-    }
-
-    private String truncate(String text, int maxLength) {
-        if (text == null) return "";
-        return text.length() <= maxLength ? text : text.substring(0, maxLength) + "...";
     }
 }
