@@ -7,7 +7,7 @@ body {
 }
 
 .table-overdue {
-  --bs-table-bg: #{$danger-bg-subtle};
+  --bs-table-bg: var(--bs-danger-bg-subtle);
 }
 
 .card-overdue {
