@@ -2,11 +2,12 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
+import { ToastComponent } from '../toast/toast.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent],
   templateUrl: './app-shell.component.html',
 })
 export class AppShellComponent implements OnInit {

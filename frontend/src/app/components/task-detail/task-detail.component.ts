@@ -1,26 +1,30 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { TaskService } from '../../services/task.service';
 import { CommentService } from '../../services/comment.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 import { Task } from '../../models/task.model';
 import { Comment } from '../../models/comment.model';
 import { ActivityItem } from '../../models/dashboard.model';
 import { TaskFormComponent } from '../task-form/task-form.component';
 import { CommentInputComponent } from '../comment-input/comment-input.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 
 @Component({
   selector: 'app-task-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, TaskFormComponent, CommentInputComponent],
+  imports: [RouterLink, DatePipe, TaskFormComponent, CommentInputComponent, SkeletonComponent],
   templateUrl: './task-detail.component.html',
 })
 export class TaskDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly taskService = inject(TaskService);
   private readonly commentService = inject(CommentService);
   protected readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
 
   protected readonly task = signal<Task | null>(null);
   protected readonly comments = signal<Comment[]>([]);
@@ -55,7 +59,9 @@ export class TaskDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set((err as Error).message || 'Failed to load task');
+        const msg = (err as Error).message || 'Failed to load task';
+        this.error.set(msg);
+        this.toastService.error(msg);
         this.loading.set(false);
       },
     });
@@ -86,11 +92,13 @@ export class TaskDetailComponent implements OnInit {
   protected onTaskSaved(updated: Task): void {
     this.task.set(updated);
     this.editMode.set(false);
+    this.toastService.success('Task saved successfully.');
     this.loadActivity(this.taskId);
   }
 
   protected onCommentAdded(comment: Comment): void {
     this.comments.update((c) => [...c, comment]);
+    this.toastService.success('Comment added.');
     this.loadActivity(this.taskId);
   }
 
@@ -99,8 +107,10 @@ export class TaskDetailComponent implements OnInit {
     this.commentService.deleteComment(this.taskId, commentId).subscribe({
       next: () => {
         this.comments.update((c) => c.filter((cm) => cm.id !== commentId));
+        this.toastService.success('Comment deleted.');
         this.loadActivity(this.taskId);
       },
+      error: () => this.toastService.error('Failed to delete comment.'),
     });
   }
 
@@ -110,8 +120,10 @@ export class TaskDetailComponent implements OnInit {
     if (!confirm('Delete this task?')) return;
     this.taskService.deleteTask(t.id).subscribe({
       next: () => {
-        window.history.back();
+        this.toastService.success('Task deleted.');
+        void this.router.navigate(['/tasks']);
       },
+      error: () => this.toastService.error('Failed to delete task.'),
     });
   }
 

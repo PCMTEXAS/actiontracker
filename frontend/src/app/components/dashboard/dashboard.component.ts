@@ -4,19 +4,22 @@ import { DatePipe } from '@angular/common';
 import { DashboardService } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { TaskService } from '../../services/task.service';
+import { ToastService } from '../../services/toast.service';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
 import { Dashboard } from '../../models/dashboard.model';
 import { Task } from '../../models/task.model';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, SkeletonComponent],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   protected readonly authService = inject(AuthService);
   protected readonly taskService = inject(TaskService);
+  private readonly toastService = inject(ToastService);
 
   protected readonly dashboard = signal<Dashboard | null>(null);
   protected readonly loading = signal<boolean>(true);
@@ -30,7 +33,9 @@ export class DashboardComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set((err as Error).message || 'Failed to load dashboard');
+        const msg = (err as Error).message || 'Failed to load dashboard';
+        this.error.set(msg);
+        this.toastService.error(msg);
         this.loading.set(false);
       },
     });

@@ -10,6 +10,8 @@ import { AppUser } from '../../models/user.model';
 import { TaskKanbanComponent } from '../task-kanban/task-kanban.component';
 import { PasteNotesModalComponent } from '../paste-notes-modal/paste-notes-modal.component';
 import { TaskFormComponent } from '../task-form/task-form.component';
+import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-task-list',
@@ -19,6 +21,7 @@ import { TaskFormComponent } from '../task-form/task-form.component';
     FormsModule,
     NgbPagination,
     TaskKanbanComponent,
+    SkeletonComponent,
   ],
   templateUrl: './task-list.component.html',
 })
@@ -27,6 +30,7 @@ export class TaskListComponent implements OnInit {
   protected readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
   private readonly modalService = inject(NgbModal);
+  private readonly toastService = inject(ToastService);
 
   protected readonly tasks = signal<Task[]>([]);
   protected readonly loading = signal<boolean>(true);
@@ -122,7 +126,9 @@ export class TaskListComponent implements OnInit {
         this.page.set(1);
       },
       error: (err) => {
-        this.error.set((err as Error).message || 'Failed to load tasks');
+        const msg = (err as Error).message || 'Failed to load tasks';
+        this.error.set(msg);
+        this.toastService.error(msg);
         this.loading.set(false);
       },
     });
@@ -195,6 +201,7 @@ export class TaskListComponent implements OnInit {
     if (ids.length === 0) return;
     if (!confirm(`Delete ${ids.length} selected task(s)?`)) return;
     let remaining = ids.length;
+    let failed = 0;
     for (const id of ids) {
       this.taskService.deleteTask(id).subscribe({
         next: () => {
@@ -202,8 +209,14 @@ export class TaskListComponent implements OnInit {
           if (remaining === 0) {
             this.selectedIds.set(new Set());
             this.loadTasks();
+            if (failed === 0) {
+              this.toastService.success(`${ids.length} task(s) deleted.`);
+            } else {
+              this.toastService.warning(`${ids.length - failed} deleted, ${failed} failed.`);
+            }
           }
         },
+        error: () => { failed++; remaining--; },
       });
     }
   }
@@ -219,8 +232,10 @@ export class TaskListComponent implements OnInit {
           if (remaining === 0) {
             this.selectedIds.set(new Set());
             this.loadTasks();
+            this.toastService.success(`${ids.length} task(s) updated to ${status.replace('_', ' ')}.`);
           }
         },
+        error: () => { remaining--; },
       });
     }
   }
@@ -231,7 +246,9 @@ export class TaskListComponent implements OnInit {
         this.tasks.update((tasks) =>
           tasks.map((t) => (t.id === id ? updated : t))
         );
+        this.toastService.success(`Status updated to ${status.replace('_', ' ')}.`);
       },
+      error: () => this.toastService.error('Failed to update status.'),
     });
   }
 
@@ -243,11 +260,14 @@ export class TaskListComponent implements OnInit {
         const set = new Set(this.selectedIds());
         set.delete(id);
         this.selectedIds.set(set);
+        this.toastService.success('Task deleted.');
       },
+      error: () => this.toastService.error('Failed to delete task.'),
     });
   }
 
   protected exportCsv(): void {
+    this.toastService.info('Preparing CSV export…');
     this.taskService.exportCsv(this.filter()).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -256,7 +276,9 @@ export class TaskListComponent implements OnInit {
         a.download = 'tasks.csv';
         a.click();
         URL.revokeObjectURL(url);
+        this.toastService.success('CSV exported successfully.');
       },
+      error: () => this.toastService.error('CSV export failed.'),
     });
   }
 
