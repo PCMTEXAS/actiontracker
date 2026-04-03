@@ -9,6 +9,7 @@ import com.pcmtexas.actiontracker.enums.Priority;
 import com.pcmtexas.actiontracker.enums.Status;
 import com.pcmtexas.actiontracker.enums.UserRole;
 import com.pcmtexas.actiontracker.repository.AppUserRepository;
+import com.pcmtexas.actiontracker.repository.TaskActivityRepository;
 import com.pcmtexas.actiontracker.service.TaskService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,9 @@ class TaskControllerTest {
 
     @MockBean
     private AppUserRepository appUserRepository;
+
+    @MockBean
+    private TaskActivityRepository taskActivityRepository;
 
     private ObjectMapper objectMapper;
     private AppUser mockUser;
