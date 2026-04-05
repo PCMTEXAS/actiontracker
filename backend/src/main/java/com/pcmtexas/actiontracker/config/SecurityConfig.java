@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -50,6 +51,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/login/**", "/oauth2/**", "/error").permitAll()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(apiAwareEntryPoint())
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oauth2SuccessHandler())
@@ -119,6 +123,19 @@ public class SecurityConfig {
                 log.info("OAuth login successful for {} (role: {})", email, appUser.getRole());
 
                 response.sendRedirect(frontendUrl + "/dashboard");
+            }
+        };
+    }
+
+    @Bean
+    public AuthenticationEntryPoint apiAwareEntryPoint() {
+        return (request, response, authException) -> {
+            if (request.getRequestURI().startsWith("/api/")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"unauthorized\"}");
+            } else {
+                response.sendRedirect("/oauth2/authorization/google");
             }
         };
     }
