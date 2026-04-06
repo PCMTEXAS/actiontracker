@@ -11,11 +11,14 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: actiontracker-backend
-  APPRUNNER_SERVICE_ARN: ${{ secrets.APPRUNNER_SERVICE_ARN }}
+  ECS_CLUSTER: actiontracker
+  ECS_SERVICE: actiontracker-backend-svc
+  ECS_TASK_DEFINITION: backend/task-definition.json
+  CONTAINER_NAME: actiontracker-backend
 
 jobs:
   build-and-deploy:
-    name: Build, Push ECR, Deploy App Runner
+    name: Build, Push ECR, Deploy ECS
     runs-on: ubuntu-latest
 
     steps:
@@ -58,30 +61,23 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Deploy to AWS App Runner
-        run: |
-          aws apprunner start-deployment \
-            --service-arn "${{ env.APPRUNNER_SERVICE_ARN }}"
-          echo "Deployment triggered for image: ${{ steps.build-image.outputs.image }}"
+      - name: Update ECS task definition with new image
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
 
-      - name: Wait for App Runner deployment to complete
-        run: |
-          echo "Waiting for App Runner service to reach RUNNING state..."
-          for i in $(seq 1 30); do
-            STATUS=$(aws apprunner describe-service \
-              --service-arn "${{ env.APPRUNNER_SERVICE_ARN }}" \
-              --query 'Service.Status' --output text)
-            echo "  Attempt $i/30 — Status: $STATUS"
-            if [ "$STATUS" = "RUNNING" ]; then
-              echo "✅ Deployment complete!"
-              exit 0
-            fi
-            sleep 20
-          done
-          echo "❌ Deployment did not complete within 10 minutes"
-          exit 1
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
 
       - name: Notify on failure
         if: failure()
         run: |
-          echo "::error::Backend deployment failed. Check App Runner console for details."
+          echo "::error::Backend deployment failed. Check ECS console and CloudWatch Logs (/ecs/actiontracker-backend) for details."

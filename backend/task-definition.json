@@ -1,0 +1,67 @@
+{
+  "family": "actiontracker-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::717292229036:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::717292229036:role/actiontracker-task-role",
+  "containerDefinitions": [
+    {
+      "name": "actiontracker-backend",
+      "image": "717292229036.dkr.ecr.us-east-1.amazonaws.com/actiontracker-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DB_URL",                  "value": "jdbc:postgresql://REPLACE_WITH_RDS_ENDPOINT:5432/actiontracker" },
+        { "name": "DB_USERNAME",             "value": "actiontracker_app" },
+        { "name": "GOOGLE_CLIENT_ID",        "value": "225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com" },
+        { "name": "CLAUDE_MODEL",            "value": "claude-sonnet-4-6" },
+        { "name": "SERVER_PORT",             "value": "8080" },
+        { "name": "APP_DOMAIN_RESTRICTION",  "value": "pcmtexas.com" },
+        { "name": "OWNER_EMAIL",             "value": "patrick@pcmtexas.com" },
+        { "name": "FRONTEND_URL",            "value": "https://actiontracker-rust.vercel.app" },
+        { "name": "SPRING_PROFILES_ACTIVE",  "value": "prod" },
+        { "name": "JAVA_TOOL_OPTIONS",       "value": "-Xmx256m -Xms128m" },
+        { "name": "EMAIL_ENABLED",           "value": "false" }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:DB_PASSWORD::"
+        },
+        {
+          "name": "GOOGLE_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:GOOGLE_CLIENT_SECRET::"
+        },
+        {
+          "name": "CLAUDE_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:CLAUDE_API_KEY::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/actiontracker-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/actuator/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
