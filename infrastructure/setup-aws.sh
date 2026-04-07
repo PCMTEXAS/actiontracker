@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# ActionTracker — AWS Infrastructure Setup
+# ActionTracker - AWS Infrastructure Setup
 # Provisions: Security Groups, RDS PostgreSQL, Secrets Manager, IAM Roles,
 #             CloudWatch Log Group, ECS Cluster + Task Definition + Service,
 #             and Application Load Balancer.
@@ -51,7 +51,7 @@ echo "    Subnets: $SUBNET_1, $SUBNET_2"
 echo "==> Creating ALB security group..."
 ALB_SG_ID=$(aws ec2 create-security-group \
   --group-name "${APP}-alb-sg" \
-  --description "ActionTracker ALB — allow HTTP/HTTPS from internet" \
+  --description "ActionTracker ALB - allow HTTP/HTTPS from internet" \
   --vpc-id $VPC_ID \
   --query "GroupId" --output text \
   --region $AWS_REGION)
@@ -64,7 +64,7 @@ echo "    ALB SG: $ALB_SG_ID"
 echo "==> Creating App security group..."
 APP_SG_ID=$(aws ec2 create-security-group \
   --group-name "${APP}-app-sg" \
-  --description "ActionTracker Fargate tasks — allow 8080 from ALB only" \
+  --description "ActionTracker Fargate tasks - allow 8080 from ALB only" \
   --vpc-id $VPC_ID \
   --query "GroupId" --output text \
   --region $AWS_REGION)
@@ -77,7 +77,7 @@ echo "    App SG: $APP_SG_ID"
 echo "==> Creating RDS security group..."
 RDS_SG_ID=$(aws ec2 create-security-group \
   --group-name "${APP}-rds-sg" \
-  --description "ActionTracker RDS — allow 5432 from app SG only" \
+  --description "ActionTracker RDS - allow 5432 from app SG only" \
   --vpc-id $VPC_ID \
   --query "GroupId" --output text \
   --region $AWS_REGION)
@@ -106,7 +106,7 @@ echo "    Subnet group created."
 echo "==> Creating RDS PostgreSQL instance (this takes ~5 minutes)..."
 DB_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
 echo ""
-echo "    !! SAVE THIS DB PASSWORD — it will NOT be shown again !!"
+echo "    !! SAVE THIS DB PASSWORD - it will NOT be shown again !!"
 echo "    DB_PASSWORD: $DB_PASSWORD"
 echo ""
 
@@ -124,7 +124,7 @@ aws rds create-db-instance \
   --no-publicly-accessible \
   --vpc-security-group-ids $RDS_SG_ID \
   --db-subnet-group-name "${APP}-db-subnet-group" \
-  --backup-retention-period 7 \
+  --backup-retention-period 0 \
   --no-deletion-protection \
   --region $AWS_REGION > /dev/null
 
@@ -362,7 +362,7 @@ echo "    ECS service created: ${APP}-backend-svc"
 
 echo ""
 echo "============================================================"
-echo "  SETUP COMPLETE — ACTION ITEMS REQUIRED"
+echo "  SETUP COMPLETE - ACTION ITEMS REQUIRED"
 echo "============================================================"
 echo ""
 echo "  RDS Endpoint : $RDS_ENDPOINT"

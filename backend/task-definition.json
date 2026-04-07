@@ -18,7 +18,7 @@
         }
       ],
       "environment": [
-        { "name": "DB_URL",                  "value": "jdbc:postgresql://REPLACE_WITH_RDS_ENDPOINT:5432/actiontracker" },
+        { "name": "DB_URL",                  "value": "jdbc:postgresql://actiontracker-db.co9g48s6mint.us-east-1.rds.amazonaws.com:5432/actiontracker" },
         { "name": "DB_USERNAME",             "value": "actiontracker_app" },
         { "name": "GOOGLE_CLIENT_ID",        "value": "225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com" },
         { "name": "CLAUDE_MODEL",            "value": "claude-sonnet-4-6" },
