@@ -19,7 +19,7 @@
       ],
       "environment": [
         { "name": "DB_URL",                  "value": "jdbc:postgresql://actiontracker-db.co9g48s6mint.us-east-1.rds.amazonaws.com:5432/actiontracker" },
-        { "name": "DB_USERNAME",             "value": "actiontracker_app" },
+        { "name": "DB_USERNAME",             "value": "postgres" },
         { "name": "GOOGLE_CLIENT_ID",        "value": "225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com" },
         { "name": "CLAUDE_MODEL",            "value": "claude-sonnet-4-6" },
         { "name": "SERVER_PORT",             "value": "8080" },
@@ -33,15 +33,15 @@
       "secrets": [
         {
           "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:DB_PASSWORD::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod-n47ZFO:DB_PASSWORD::"
         },
         {
           "name": "GOOGLE_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:GOOGLE_CLIENT_SECRET::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod-n47ZFO:GOOGLE_CLIENT_SECRET::"
         },
         {
           "name": "CLAUDE_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod:CLAUDE_API_KEY::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:717292229036:secret:actiontracker/prod-n47ZFO:CLAUDE_API_KEY::"
         }
       ],
       "logConfiguration": {
@@ -60,7 +60,7 @@
         "interval": 30,
         "timeout": 5,
         "retries": 3,
-        "startPeriod": 60
+        "startPeriod": 120
       }
     }
   ]
