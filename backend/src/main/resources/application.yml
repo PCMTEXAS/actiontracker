@@ -34,7 +34,7 @@ spring:
           writetimeout: 5000
   sql:
     init:
-      mode: never
+      mode: always
   security:
     oauth2:
       client:
