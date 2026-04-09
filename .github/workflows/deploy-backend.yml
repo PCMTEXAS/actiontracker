@@ -3,8 +3,10 @@ name: Build & Deploy Backend
 on:
   push:
     branches: [main]
-    paths:
+        paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'Dockerfile'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
