@@ -1,11 +1,10 @@
 # ---- Frontend Build ----
-FROM node:20-alpine AS frontend-builder
+FROM node:20 AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ .
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:prod
-RUN echo "=== Angular build output ===" && ls -la dist/ && ls -la dist/pcm-texas-action-tracker/ || true
 
 # ---- Backend Build ----
 FROM maven:3.9.6-eclipse-temurin-17 AS backend-builder
@@ -15,7 +14,6 @@ RUN mvn dependency:go-offline -B
 COPY backend/src ./src
 # Embed Angular static files into Spring Boot
 COPY --from=frontend-builder /frontend/dist/pcm-texas-action-tracker/browser ./src/main/resources/static
-RUN echo "=== Static files copied ===" && ls -la src/main/resources/static/ | head -20
 RUN mvn clean package -DskipTests -B
 
 # ---- Runtime ----
