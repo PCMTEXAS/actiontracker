@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
+      - 'Dockerfile'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
@@ -25,17 +27,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build JAR (skip tests — tests run in separate CI job)
-        working-directory: backend
-        run: mvn package -DskipTests -q
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -52,9 +43,8 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
-        working-directory: backend
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .
           docker tag  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
                       $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
