@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { DashboardService } from '../../services/dashboard.service';
@@ -15,7 +15,7 @@ import { Task } from '../../models/task.model';
   imports: [RouterLink, DatePipe, SkeletonComponent],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly dashboardService = inject(DashboardService);
   protected readonly authService = inject(AuthService);
   protected readonly taskService = inject(TaskService);
@@ -26,7 +26,18 @@ export class DashboardComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly today = new Date();
 
+  private readonly onTasksUpdated = () => this.loadDashboard();
+
   ngOnInit(): void {
+    this.loadDashboard();
+    window.addEventListener('tasks-updated', this.onTasksUpdated);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('tasks-updated', this.onTasksUpdated);
+  }
+
+  private loadDashboard(): void {
     this.dashboardService.getDashboard().subscribe({
       next: (data) => {
         this.dashboard.set(data);
