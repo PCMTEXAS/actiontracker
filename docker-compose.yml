@@ -1,0 +1,72 @@
+# ActionTracker — Local Development Stack
+# Usage: docker compose up
+# App: http://localhost:4200 (Angular dev server with hot reload)
+# API: http://localhost:8080
+# DB:  localhost:5432
+
+services:
+
+  # PostgreSQL — local dev database
+  db:
+    image: postgres:16-alpine
+    container_name: actiontracker-db
+    environment:
+      POSTGRES_DB: actiontracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d actiontracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot backend — rebuilds on source changes via volume mount
+  backend:
+    image: maven:3.9.6-eclipse-temurin-17
+    container_name: actiontracker-backend
+    working_dir: /app
+    command: mvn spring-boot:run
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - maven_cache:/root/.m2
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/actiontracker
+      DB_USERNAME: postgres
+      DB_PASSWORD: devpassword
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-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}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-change-me}
+      FRONTEND_URL: http://localhost:4200
+      APP_DOMAIN_RESTRICTION: pcmtexas.com
+      OWNER_EMAIL: patrick@pcmtexas.com
+      EMAIL_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Angular frontend — hot reload dev server
+  frontend:
+    image: node:20.20.2
+    container_name: actiontracker-frontend
+    working_dir: /frontend
+    command: sh -c "npm install && npm start"
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/frontend
+      - node_modules:/frontend/node_modules
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+
+volumes:
+  postgres_data:
+  maven_cache:
+  node_modules:

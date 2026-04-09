@@ -2,8 +2,8 @@
 # Pinned: node 20.20.2 (LTS) — matches local dev environment
 FROM node:20.20.2 AS frontend-builder
 WORKDIR /frontend
-COPY frontend/package*.json ./
-RUN npm install
+COPY frontend/package*.json frontend/package-lock.json ./
+RUN npm ci
 COPY frontend/ .
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:prod
 
