@@ -2,9 +2,9 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci --prefer-offline
+RUN npm ci
 COPY frontend/ .
-RUN npm run build -- --configuration=production
+RUN npm run build:prod
 
 # ---- Backend Build ----
 FROM maven:3.9.6-eclipse-temurin-17 AS backend-builder
