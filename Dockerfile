@@ -2,7 +2,7 @@
 FROM node:20 AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci
+RUN npm install
 COPY frontend/ .
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build:prod
 
