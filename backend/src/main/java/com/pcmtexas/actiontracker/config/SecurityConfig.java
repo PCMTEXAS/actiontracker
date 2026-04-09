@@ -50,7 +50,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/login/**", "/oauth2/**", "/error").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico",
+                                "/assets/**", "/*.json", "/*.txt", "/*.webmanifest").permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(apiAwareEntryPoint())

@@ -1,7 +1,9 @@
 {
   "family": "actiontracker-backend",
   "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::717292229036:role/ecsTaskExecutionRole",
@@ -18,17 +20,50 @@
         }
       ],
       "environment": [
-        { "name": "DB_URL",                  "value": "jdbc:postgresql://actiontracker-db.co9g48s6mint.us-east-1.rds.amazonaws.com:5432/actiontracker" },
-        { "name": "DB_USERNAME",             "value": "postgres" },
-        { "name": "GOOGLE_CLIENT_ID",        "value": "225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com" },
-        { "name": "CLAUDE_MODEL",            "value": "claude-sonnet-4-6" },
-        { "name": "SERVER_PORT",             "value": "8080" },
-        { "name": "APP_DOMAIN_RESTRICTION",  "value": "pcmtexas.com" },
-        { "name": "OWNER_EMAIL",             "value": "patrick@pcmtexas.com" },
-        { "name": "FRONTEND_URL",            "value": "https://actiontracker-rust.vercel.app" },
-        { "name": "SPRING_PROFILES_ACTIVE",  "value": "prod" },
-        { "name": "JAVA_TOOL_OPTIONS",       "value": "-Xmx256m -Xms128m" },
-        { "name": "EMAIL_ENABLED",           "value": "false" }
+        {
+          "name": "DB_URL",
+          "value": "jdbc:postgresql://actiontracker-db.co9g48s6mint.us-east-1.rds.amazonaws.com:5432/actiontracker"
+        },
+        {
+          "name": "DB_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "GOOGLE_CLIENT_ID",
+          "value": "225590786289-3t8q2lp1tnelof61tl92scjod7kkh9m8.apps.googleusercontent.com"
+        },
+        {
+          "name": "CLAUDE_MODEL",
+          "value": "claude-sonnet-4-6"
+        },
+        {
+          "name": "SERVER_PORT",
+          "value": "8080"
+        },
+        {
+          "name": "APP_DOMAIN_RESTRICTION",
+          "value": "pcmtexas.com"
+        },
+        {
+          "name": "OWNER_EMAIL",
+          "value": "patrick@pcmtexas.com"
+        },
+        {
+          "name": "FRONTEND_URL",
+          "value": "http://actiontracker-alb-75268639.us-east-1.elb.amazonaws.com"
+        },
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "JAVA_TOOL_OPTIONS",
+          "value": "-Xmx256m -Xms128m"
+        },
+        {
+          "name": "EMAIL_ENABLED",
+          "value": "false"
+        }
       ],
       "secrets": [
         {
